@@ -1,13 +1,17 @@
 package com.extendedclip.papi.expansion.townychat;
 
+import com.palmergames.bukkit.TownyChat.Chat;
 import com.palmergames.bukkit.TownyChat.TownyChatFormatter;
+import com.palmergames.bukkit.TownyChat.channels.ChannelsHolder;
 import com.palmergames.bukkit.TownyChat.config.ChatSettings;
-import com.palmergames.bukkit.TownyChat.events.AsyncChatHookEvent;
+import com.palmergames.bukkit.TownyChat.events.PlayerJoinChatChannelEvent;
+import com.palmergames.bukkit.towny.Towny;
+import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.exceptions.NotRegisteredException;
 import com.palmergames.bukkit.towny.object.Resident;
-import com.palmergames.bukkit.towny.TownyUniverse;
 import me.clip.placeholderapi.expansion.Cleanable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -34,12 +38,16 @@ public class TownyChatExpansion extends PlaceholderExpansion implements Listener
 
   @Override
   public String getAuthor() {
-    return "clip";
+    return "clip, Jsinco";
   }
 
   @Override
   public String getVersion() {
     return VERSION;
+  }
+
+  public TownyChatExpansion() {
+    Bukkit.getPluginManager().registerEvents(this, Towny.getPlugin());
   }
 
   @Override
@@ -49,8 +57,18 @@ public class TownyChatExpansion extends PlaceholderExpansion implements Listener
       case "channel_tag":
         return getChatPlayer(p).getTag();
       case "channel_name":
-        return getChatPlayer(p).getChannel();
+        String s = getChatPlayer(p).getChannel();
+        if (!s.isEmpty()) {
+          s = s.substring(0, 1).toUpperCase() + s.substring(1);
+        } else {
+          s = "Global";
+        }
+        return s;
       case "message_color":
+        String channel = getChatPlayer(p).getChannel();
+        if (channel.isEmpty() || channel.equalsIgnoreCase("global")) {
+          return "";
+        }
         return getChatPlayer(p).getColor();
     }
 
@@ -208,13 +226,9 @@ public class TownyChatExpansion extends PlaceholderExpansion implements Listener
   }
 
   @EventHandler(priority = EventPriority.LOWEST)
-  public void onChat(AsyncChatHookEvent e) {
-
-    if (e.isCancelled()) {
-      return;
-    }
-
+  public void onChat(PlayerJoinChatChannelEvent e) {
     Player p = e.getPlayer();
+    new ChannelsHolder(Chat.getPlugin(Chat.class));
     String tag = "";
     String channel = "";
     String msgColor = "";
@@ -223,7 +237,7 @@ public class TownyChatExpansion extends PlaceholderExpansion implements Listener
       channel = e.getChannel().getName();
       msgColor = e.getChannel().getMessageColour();
     }
-
+    //Bukkit.broadcastMessage("onChat: " + p.getName() + " " + channel + " " + tag + " " + msgColor);
     updatePlayer(p.getName(), channel, tag, msgColor);
   }
 }
